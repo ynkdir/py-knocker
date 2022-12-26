@@ -10,19 +10,19 @@
 typedef int (*PY_MAIN)(int, wchar_t**);
 
 int wmain(int argc, wchar_t **argv) {
-    wchar_t path[_MAX_PATH];
-    if (GetModuleFileNameW(NULL, path, _MAX_PATH) == 0)
+    wchar_t path[MAX_PATH];
+    if (GetModuleFileNameW(NULL, path, MAX_PATH) == 0)
         return EXIT_FAILURE;
 
     // Get module name from .exe file name.
-    wchar_t main_module[_MAX_PATH];
+    wchar_t main_module[MAX_PATH];
     wchar_t *s = PathFindFileNameW(path);
     if (s == &path[0])
         return EXIT_FAILURE;
     wchar_t *e = PathFindExtensionW(s);
     if (*e == 0)
         return EXIT_FAILURE;
-    wcsncpy_s(main_module, _MAX_PATH, s, e - s);
+    wcsncpy_s(main_module, MAX_PATH, s, e - s);
 
     PathRemoveFileSpecW(path);
     PathAppendW(path, PYTHON_DLL_PATH);
