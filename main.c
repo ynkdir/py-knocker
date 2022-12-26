@@ -6,7 +6,6 @@
 #pragma comment(lib, "onecore.lib")
 
 #define PYTHON_DLL_PATH L"python\\python3.dll"
-#define MAIN_MODULE L"main"
 
 typedef int (*PY_MAIN)(int, wchar_t**);
 
@@ -14,6 +13,17 @@ int wmain(int argc, wchar_t **argv) {
     wchar_t path[_MAX_PATH];
     if (GetModuleFileNameW(NULL, path, _MAX_PATH) == 0)
         return EXIT_FAILURE;
+
+    // Get module name from .exe file name.
+    wchar_t main_module[_MAX_PATH];
+    wchar_t *s = PathFindFileNameW(path);
+    if (s == &path[0])
+        return EXIT_FAILURE;
+    wchar_t *e = PathFindExtensionW(s);
+    if (*e == 0)
+        return EXIT_FAILURE;
+    wcsncpy_s(main_module, _MAX_PATH, s, e - s);
+
     PathRemoveFileSpecW(path);
     PathAppendW(path, PYTHON_DLL_PATH);
 
@@ -39,7 +49,7 @@ int wmain(int argc, wchar_t **argv) {
         return EXIT_FAILURE;
     pyargv[0] = argv[0];
     pyargv[1] = (wchar_t*)L"-m";
-    pyargv[2] = (wchar_t*)MAIN_MODULE;
+    pyargv[2] = main_module;
     for (int i = 1; i < argc; ++i)
         pyargv[i + 2] = argv[i];
     pyargv[pyargc] = NULL;

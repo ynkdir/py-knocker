@@ -2,9 +2,10 @@
 Python embeddable package launcher.
 
 This is used for deploying python application with the following package configuration.
+
 myapp/
   python/       # python embeddable package
-  lib/main.py   # main program
+  lib/myapp.py # main program
   myapp.exe     # launcher
 
 
@@ -18,10 +19,10 @@ USAGE:
     > tar.exe -C python -xf python-3.11.0-embed-amd64.zip
 
     # Write main program.
-    > vim python\main.py
+    > vim python\myapp.py
     print("hello, world")
 
-    # Run myapp.exe.
+    # Run myapp.exe.  It runs same name module.
     > .\myapp.exe
     hello, world
 
@@ -34,7 +35,7 @@ USAGE:
 
     # Separate your program from python directory.
     > mkdir lib
-    > move python\main.py lib
+    > move python\myapp.py lib
     > vim python\python311._pth
     add "..\lib" line
     > .\myapp.exe
