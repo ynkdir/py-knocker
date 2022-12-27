@@ -41,3 +41,13 @@ USAGE:
     > .\myapp.exe
     hello, world
 
+    # Use with zipapp
+    > cl /DZIPAPP /Femyapp_stub.exe main.c
+    > mkdir myapp
+    > vim myapp\__main__.py
+    print("hello, world")
+    > py -m zipapp myapp
+    > cmd /c "copy /b myapp_stub.exe + myapp.pyz myapp.exe"
+    > .\myapp.exe
+    hello, world
+
