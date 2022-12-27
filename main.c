@@ -52,9 +52,7 @@ int wmain(int argc, wchar_t **argv) {
         return EXIT_FAILURE;
     pyargv[0] = argv[0];
     pyargv[1] = argv[0];
-    for (int i = 1; i < argc; ++i)
-        pyargv[i + 1] = argv[i];
-    pyargv[pyargc] = NULL;
+    memcpy(&pyargv[2], &argv[1], argc * sizeof(wchar_t *)); // include argv[argc] == NULL
 #else
     int pyargc = argc + 2;
     wchar_t **pyargv = malloc(sizeof(wchar_t*) * (pyargc + 1));
@@ -63,9 +61,7 @@ int wmain(int argc, wchar_t **argv) {
     pyargv[0] = argv[0];
     pyargv[1] = (wchar_t*)L"-m";
     pyargv[2] = main_module;
-    for (int i = 1; i < argc; ++i)
-        pyargv[i + 2] = argv[i];
-    pyargv[pyargc] = NULL;
+    memcpy(&pyargv[3], &argv[1], argc * sizeof(wchar_t *)); // include argv[argc] == NULL
 #endif
 
     return Py_Main(pyargc, pyargv);
