@@ -10,8 +10,10 @@ myapp/
 
 
 USAGE:
-    # Compile main.c with your application name.
-    > cl /Femyapp.exe main.c
+    # Build exe file.
+    > cl /Femain_stub.exe main.c
+    > py -m zipapp bootstrap
+    > cmd /c "copy /b main_stub.exe + bootstrap.pyz myapp.exe"
 
     # Download python embeddable package.
     > curl.exe -O https://www.python.org/ftp/python/3.11.0/python-3.11.0-embed-amd64.zip
@@ -38,16 +40,6 @@ USAGE:
     > move python\myapp.py lib
     > vim python\python311._pth
     add "..\lib" line
-    > .\myapp.exe
-    hello, world
-
-    # Use with zipapp
-    > cl /DZIPAPP /Femyapp_stub.exe main.c
-    > mkdir myapp
-    > vim myapp\__main__.py
-    print("hello, world")
-    > py -m zipapp myapp
-    > cmd /c "copy /b myapp_stub.exe + myapp.pyz myapp.exe"
     > .\myapp.exe
     hello, world
 

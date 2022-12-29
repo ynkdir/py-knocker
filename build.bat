@@ -1,4 +1,5 @@
-cl /nologo /W4 /O2 /MD main.c
-cl /nologo /W4 /O2 /MD /Femainw.exe main.c /link /SUBSYSTEM:WINDOWS /ENTRY:wmainCRTStartup
-cl /nologo /W4 /O2 /MD /DZIPAPP /Femain_zipapp.exe main.c
-cl /nologo /W4 /O2 /MD /DZIPAPP /Femainw_zipapp.exe main.c /link /SUBSYSTEM:WINDOWS /ENTRY:wmainCRTStartup
+cl /nologo /W4 /O2 /MD /Femain_stub.exe main.c
+cl /nologo /W4 /O2 /MD /Femainw_stub.exe main.c /link /SUBSYSTEM:WINDOWS /ENTRY:wmainCRTStartup
+py -m zipapp bootstrap
+copy /b main_stub.exe + bootstrap.pyz main.exe
+copy /b mainw_stub.exe + bootstrap.pyz mainw.exe
