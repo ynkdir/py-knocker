@@ -45,6 +45,12 @@ int wmain(int argc, wchar_t **argv) {
     if (SetDllDirectoryW(NULL) == 0)
         return EXIT_FAILURE;
 
+    // Workaround for multiprocessing.
+    // FIXME: or pyargv[0] = "...\\python\\python.exe"?
+    for (int i = 1; i < argc; ++i)
+        if (wcscmp(argv[i], L"--multiprocessing-fork") == 0)
+            return Py_Main(argc, argv);
+
 #if defined(ZIPAPP)
     int pyargc = argc + 1;
     wchar_t **pyargv = malloc(sizeof(wchar_t*) * (pyargc + 1));
