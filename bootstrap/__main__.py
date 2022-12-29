@@ -1,3 +1,3 @@
-from importlib import import_module
 from pathlib import Path
-import_module(Path(__file__).parent.stem)
+from runpy import run_module
+run_module(Path(__file__).parent.stem, run_name="__main__", alter_sys=True)
