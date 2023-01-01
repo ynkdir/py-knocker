@@ -43,3 +43,19 @@ USAGE:
     > .\myapp.exe
     hello, world
 
+
+MEMO:
+    How to create exe file to launch system installed python like $PYTHONHOME\Scripts\*.exe.
+
+    > type shebang.txt
+    #!C:\path\to\Python\python.exe
+
+    > type myapp\__main__.py
+    print("hello, myapp.exe")
+
+    > py -m zipapp myapp    # generate myapp.pyz
+
+    > copy $PYTHONHOME\Lib\site-packages\pip\_vendor\distlib\t64.exe .
+
+    > cmd /c "copy /b t64.exe + shebang.txt + myapp.pyz myapp.exe"
+
