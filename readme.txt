@@ -55,7 +55,11 @@ MEMO:
 
     > py -m zipapp myapp    # generate myapp.pyz
 
-    > copy $PYTHONHOME\Lib\site-packages\pip\_vendor\distlib\t64.exe .
+    > copy $PYTHONHOME\Lib\site-packages\pip\_vendor\distlib\t64.exe .    # w64.exe for noconsole
 
     > cmd /c "copy /b t64.exe + shebang.txt + myapp.pyz myapp.exe"
+
+    # distlib's launcher also support relative path.
+    > type shebang_relative.txt
+    #!<launcher_dir>\python\python.exe
 
