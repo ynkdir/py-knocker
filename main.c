@@ -39,9 +39,10 @@ int wmain(int argc, wchar_t **argv) {
         if (wcscmp(argv[i], L"--multiprocessing-fork") == 0)
             return Py_Main(argc, argv);
 
-    wchar_t **myargv = _alloca((argc + 1) * sizeof(wchar_t*));
+    wchar_t **myargv = _alloca((argc + 2) * sizeof(wchar_t*));
     myargv[0] = argv[0];
-    memcpy(myargv + 1, argv, argc * sizeof(wchar_t *));
-    return Py_Main(argc+1, myargv);
+    myargv[1] = L"-I";  // isolated mode
+    memcpy(myargv + 2, argv, argc * sizeof(wchar_t *));
+    return Py_Main(argc + 2, myargv);
 }
 
