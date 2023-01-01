@@ -59,7 +59,7 @@ MEMO:
 
     > cmd /c "copy /b t64.exe + shebang.txt + myapp.pyz myapp.exe"
 
-    # distlib's launcher also support relative path.
+    # distlib's launcher also support relative path and arguments.
     > type shebang_relative.txt
-    #!<launcher_dir>\python\python.exe
+    #!<launcher_dir>\python\python.exe -I
 
