@@ -10,6 +10,10 @@
 typedef int (*PY_MAIN)(int, wchar_t**);
 
 int wmain(int argc, wchar_t **argv) {
+    // Prevent DLL preloading attack.
+    if (SetDllDirectoryW(L"") == 0)
+        return EXIT_FAILURE;
+
     wchar_t path[MAX_PATH];
     if (GetModuleFileNameW(NULL, path, MAX_PATH) == 0)
         return EXIT_FAILURE;
@@ -17,20 +21,16 @@ int wmain(int argc, wchar_t **argv) {
     PathRemoveFileSpecW(path);
     PathAppendW(path, PYTHON_DLL_PATH);
 
-    HMODULE pydll = LoadLibraryW(path);
+    // Functions in python3.dll is forwarded to python3xx.dll.
+    // GetProcAddress() fails if python3xx.dll is not in search path
+    // even if it is in the same directory with python3.dll.
+    // LOAD_WITH_ALTERED_SEARCH_PATH seems to affect following GetProcAddress().
+    HMODULE pydll = LoadLibraryExW(path, NULL, LOAD_WITH_ALTERED_SEARCH_PATH);
     if (pydll == NULL)
         return EXIT_FAILURE;
 
-    // Function in python3.dll is forwarded to python3xx.dll.
-    // Set PATH to resolve forwarding.
-    // Or load python3xx.dll directly.
-    PathRemoveFileSpecW(path);
-    if (SetDllDirectoryW(path) == 0)
-        return EXIT_FAILURE;
     PY_MAIN Py_Main = (PY_MAIN)GetProcAddress(pydll, "Py_Main");
     if (Py_Main == NULL)
-        return EXIT_FAILURE;
-    if (SetDllDirectoryW(NULL) == 0)
         return EXIT_FAILURE;
 
     // Workaround for multiprocessing.
