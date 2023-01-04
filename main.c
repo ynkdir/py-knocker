@@ -1,6 +1,6 @@
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
-#include <shlwapi.h>
+#include <pathcch.h>
 #include <stdlib.h>
 #include <string.h>
 #pragma comment(lib, "onecore.lib")
@@ -18,8 +18,11 @@ int wmain(int argc, wchar_t **argv) {
     if (GetModuleFileNameW(NULL, path, MAX_PATH) == 0)
         return EXIT_FAILURE;
 
-    PathRemoveFileSpecW(path);
-    PathAppendW(path, PYTHON_DLL_PATH);
+    if (FAILED(PathCchRemoveFileSpec(path, MAX_PATH)))
+        return EXIT_FAILURE;
+
+    if (FAILED(PathCchAppend(path, MAX_PATH, PYTHON_DLL_PATH)))
+        return EXIT_FAILURE;
 
     HMODULE pydll = LoadLibraryExW(path, NULL, LOAD_LIBRARY_SEARCH_DEFAULT_DIRS|LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR);
     if (pydll == NULL)
