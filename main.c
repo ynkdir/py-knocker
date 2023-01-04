@@ -10,7 +10,7 @@
 typedef int (*PY_MAIN)(int, wchar_t**);
 
 int wmain(int argc, wchar_t **argv) {
-    // Prevent DLL preloading attack.
+    // https://learn.microsoft.com/en-us/windows/win32/dlls/dynamic-link-library-security
     if (SetDllDirectoryW(L"") == 0)
         return EXIT_FAILURE;
 
@@ -21,11 +21,7 @@ int wmain(int argc, wchar_t **argv) {
     PathRemoveFileSpecW(path);
     PathAppendW(path, PYTHON_DLL_PATH);
 
-    // Functions in python3.dll is forwarded to python3xx.dll.
-    // GetProcAddress() fails if python3xx.dll is not in search path
-    // even if it is in the same directory with python3.dll.
-    // LOAD_WITH_ALTERED_SEARCH_PATH seems to affect following GetProcAddress().
-    HMODULE pydll = LoadLibraryExW(path, NULL, LOAD_WITH_ALTERED_SEARCH_PATH);
+    HMODULE pydll = LoadLibraryExW(path, NULL, LOAD_LIBRARY_SEARCH_DEFAULT_DIRS|LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR);
     if (pydll == NULL)
         return EXIT_FAILURE;
 
