@@ -5,7 +5,9 @@
 #include <string.h>
 #pragma comment(lib, "onecore.lib")
 
-#define PYTHON_DLL_PATH L"python\\python3.dll"
+#ifndef PYTHON_DLL_PATH
+# define PYTHON_DLL_PATH L"..\\python\\python3.dll"
+#endif
 
 typedef int (*PY_MAIN)(int, wchar_t**);
 
@@ -18,10 +20,7 @@ int wmain(int argc, wchar_t **argv) {
     if (GetModuleFileNameW(NULL, path, MAX_PATH) == 0)
         return EXIT_FAILURE;
 
-    if (FAILED(PathCchRemoveFileSpec(path, MAX_PATH)))
-        return EXIT_FAILURE;
-
-    if (FAILED(PathCchAppend(path, MAX_PATH, PYTHON_DLL_PATH)))
+    if (FAILED(PathCchCombine(path, MAX_PATH, path, PYTHON_DLL_PATH)))
         return EXIT_FAILURE;
 
     HMODULE pydll = LoadLibraryExW(path, NULL, LOAD_LIBRARY_SEARCH_DEFAULT_DIRS|LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR);
