@@ -16,12 +16,14 @@ int wmain(int argc, wchar_t **argv) {
     if (SetDllDirectoryW(L"") == 0)
         return EXIT_FAILURE;
 
-    wchar_t path[MAX_PATH];
-    if (GetModuleFileNameW(NULL, path, MAX_PATH) == 0)
-        return EXIT_FAILURE;
-
-    if (FAILED(PathCchCombine(path, MAX_PATH, path, PYTHON_DLL_PATH)))
-        return EXIT_FAILURE;
+    wchar_t path[MAX_PATH] = PYTHON_DLL_PATH;
+    // Optimizer may drop this block for absolute PYTHON_DLL_PATH.
+    if (PYTHON_DLL_PATH[0] == L'.') {
+        if (GetModuleFileNameW(NULL, path, MAX_PATH) == 0)
+            return EXIT_FAILURE;
+        if (FAILED(PathCchCombine(path, MAX_PATH, path, PYTHON_DLL_PATH)))
+            return EXIT_FAILURE;
+    }
 
     HMODULE pydll = LoadLibraryExW(path, NULL, LOAD_LIBRARY_SEARCH_DEFAULT_DIRS|LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR);
     if (pydll == NULL)
