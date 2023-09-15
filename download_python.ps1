@@ -3,7 +3,8 @@
 Param(
     [String]$Version = "3.11.5",
     [String]$Arch = "amd64",
-    [String]$OutDir = "python"
+    [String]$OutDir = "python",
+    [String]$LibDir = ""
 )
 
 $ftp = "https://www.python.org/ftp/python/$Version/$Arch"
@@ -44,6 +45,18 @@ function Install-Msi($url, $outdir) {
     Remove-Item "$OutDir\$msi"
 }
 
+function Install-Pth($libdir) {
+    Write-Info "Install Pth $libdir"
+    $pth = @"
+.\DLLs
+.\Lib
+..\$libdir
+import site
+"@
+    $ver = (&"$OutDir\python.exe" -c "import sys; print(f'{sys.version_info.major}{sys.version_info.minor}')")
+    Set-Content -Path "$OutDir\python$ver._pth" -NoNewLine -Value $pth
+}
+
 if (-not (Test-Path $OutDir)) {
     New-Item -Path $OutDir -ItemType directory
 }
@@ -53,4 +66,7 @@ Install-Msi "$ftp/exe.msi" $OutDir
 Install-Msi "$ftp/lib.msi" $OutDir
 Install-Msi "$ftp/tcltk.msi" $OutDir
 Install-Pip
+if ($LibDir -ne "") {
+    Install-Pth $LibDir
+}
 
