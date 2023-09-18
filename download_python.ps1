@@ -10,6 +10,8 @@ Param(
     [switch]$Embed
 )
 
+$ErrorActionPreference = "Stop"
+
 $ftp = "https://www.python.org/ftp/python"
 $getpip = "https://bootstrap.pypa.io/get-pip.py"
 
@@ -39,12 +41,15 @@ function Download-Temporary($url) {
     return Get-Item $tmpdir/$filename
 }
 
+function Wait-GuiProcess() {
+}
+
 function Expand-Msi($msifile, $outdir) {
     Write-Info "Expand-Msi $msifile $outdir"
     # msiexec.exe requires absolute path
     $msifile_abs = Get-AbsolutePath $msifile
     $outdir_abs = Get-AbsolutePath $outdir
-    Start-Process msiexec.exe "/a $msifile_abs targetdir=`"$outdir_abs`" /qn" -Wait
+    msiexec.exe /a $msifile_abs targetdir=$outdir_abs /qn | Wait-GuiProcess
 }
 
 function Install-Msi($url, $outdir) {
