@@ -5,6 +5,8 @@ Param(
     [String]$Arch = "amd64",
     [String]$OutDir = "python",
     [String]$LibDir = "",
+    [switch]$Tcltk,
+    [switch]$Pip,
     [switch]$Embed
 )
 
@@ -15,78 +17,65 @@ function Write-Info($msg) {
     Write-Host $msg -ForegroundColor Green
 }
 
-function New-TemporaryPath() {
-    $t = New-TemporaryFile
-    Remove-Item $t
-    return $t.FullName
+function New-TemporaryFolder() {
+    $tmpfile = New-TemporaryFile
+    Remove-Item $tmpfile
+    return New-Item -Path $tmpfile.FullName -ItemType directory
 }
 
-function New-TemporaryFolder() {
-    return New-Item -Path (New-TemporaryPath) -ItemType directory
+function Get-AbsolutePath($path) {
+    try {
+        return (Get-Item $path -ErrorAction Stop).FullName
+    } catch {
+        # When path does not exist.
+        return $_.TargetObject
+    }
+}
+
+function Download-Temporary($url) {
+    $tmpdir = New-TemporaryFolder
+    $filename = Split-Path -Path $url -Leaf
+    Invoke-WebRequest $url -OutFile $tmpdir/$filename
+    return Get-Item $tmpdir/$filename
 }
 
 function Expand-Msi($msifile, $outdir) {
     Write-Info "Expand-Msi $msifile $outdir"
-    Start-Process msiexec.exe "/a $msifile targetdir=`"$outdir`" /qn" -Wait
-}
-
-function Install-Pip() {
-    Write-Info "Install pip."
-    $t = New-TemporaryPath
-    Invoke-WebRequest $getpip -OutFile $t
-    & $OutDir\python.exe $t
+    # msiexec.exe requires absolute path
+    $msifile_abs = Get-AbsolutePath $msifile
+    $outdir_abs = Get-AbsolutePath $outdir
+    Start-Process msiexec.exe "/a $msifile_abs targetdir=`"$outdir_abs`" /qn" -Wait
 }
 
 function Install-Msi($url, $outdir) {
     Write-Info "Install $url"
-    $msi = ([uri]$url).Segments[-1]
-    $tmsi = "$(New-TemporaryFolder)\$msi"
-    Invoke-WebRequest $url -OutFile $tmsi
-    Expand-Msi $tmsi (Get-Item $outdir).FullName
-    Remove-Item "$OutDir\$msi"
+    $msifile = Download-Temporary $url
+    Expand-Msi $msifile $outdir
+    Remove-Item $outdir\$($msifile.Name)
 }
 
-function Get-Python-Version() {
-    & "$OutDir\python.exe" -c "import sys; print(f'{sys.version_info.major}{sys.version_info.minor}')"
+function Install-Pip() {
+    Write-Info "Install pip."
+    (Invoke-WebRequest $getpip).Content | & $OutDir\python.exe
 }
 
-function Install-Pth($libdir) {
-    Write-Info "Install Pth $libdir"
-    $ver = Get-Python-Version
-    $pth = @"
-DLLs
-Lib
-$libdir
-import site
-"@
-    Set-Content -Path "$OutDir\python$ver._pth" -NoNewLine -Value $pth
+function Get-Python-Version-MajorMinor() {
+    return $Version.split(".")[0..1] -join ""
 }
 
-function Install-Pth-Embed($libdir) {
-    $ver = Get-Python-Version
-    $pth = @"
-python$ver.zip
-Lib
-$libdir
-import site
-"@
-    Set-Content -Path "$OutDir\python$ver._pth" -NoNewLine -Value $pth
+# Note: _pth file enables isolated mode.
+function Install-Pth() {
+    $majorminor = Get-Python-Version-MajorMinor
+    $pth = @("python$majorminor.zip", "DLLs", "Lib", $LibDir, "import site")
+    Write-Info "Install Pth $pth"
+    Set-Content -Path $OutDir\python$majorminor._pth -Value $pth
 }
 
 function Install-Embed() {
     $url = "$ftp/$Version/python-$Version-embed-$Arch.zip"
     Write-Info "Install $url"
-    $t = New-TemporaryFolder
-    Invoke-WebRequest $url -OutFile "$t/python.zip"
-    Expand-Archive "$t/python.zip" -DestinationPath $OutDir
-}
-
-function Install-Tkinter() {
-    $t = New-TemporaryFolder
-    Install-Msi "$ftp/$Version/$Arch/tcltk.msi" $t
-    Move-Item $t\DLLs\* $OutDir\
-    Move-Item $t\Lib\* $OutDir\Lib\
-    Move-Item $t\tcl $OutDir\
+    $zipfile = Download-Temporary $url
+    Expand-Archive $zipfile -DestinationPath $OutDir
 }
 
 function Install-Python-Msi() {
@@ -94,16 +83,26 @@ function Install-Python-Msi() {
     Install-Msi "$ftp/$Version/$Arch/core.msi" $OutDir
     Install-Msi "$ftp/$Version/$Arch/exe.msi" $OutDir
     Install-Msi "$ftp/$Version/$Arch/lib.msi" $OutDir
-    Install-Msi "$ftp/$Version/$Arch/tcltk.msi" $OutDir
-    Install-Pth $LibDir
-    Install-Pip
+    Install-Pth
+    if ($Tcltk) {
+        Install-Msi "$ftp/$Version/$Arch/tcltk.msi" $OutDir
+    }
+    if ($Pip) {
+        Install-Pip
+    }
 }
 
 function Install-Python-Embed() {
     Install-Embed
-    Install-Pth-Embed $LibDir
-    Install-Tkinter
-    Install-Pip
+    New-Item -Path $OutDir\DLLs -ItemType directory
+    New-Item -Path $OutDir\Lib -ItemType directory
+    Install-Pth
+    if ($Tcltk) {
+        Install-Msi "$ftp/$Version/$Arch/tcltk.msi" $OutDir
+    }
+    if ($Pip) {
+        Install-Pip
+    }
 }
 
 if ($Embed) {
