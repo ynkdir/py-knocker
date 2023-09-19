@@ -52,11 +52,12 @@ function Expand-Msi($msifile, $outdir) {
     msiexec.exe /a $msifile_abs targetdir=$outdir_abs /qn | Wait-GuiProcess
 }
 
-function Install-Msi($url, $outdir) {
+function Install-Msi($url) {
     Write-Info "Install $url"
     $msifile = Download-Temporary $url
-    Expand-Msi $msifile $outdir
-    Remove-Item $outdir\$($msifile.Name)
+    Expand-Msi $msifile $OutDir
+    Remove-Item $OutDir\$($msifile.Name)
+    Remove-Item -Recurse (Split-Path $msifile -Parent)
 }
 
 function Install-Pip() {
@@ -76,21 +77,21 @@ function Install-Pth() {
     Set-Content -Path $OutDir\python$majorminor._pth -Value $pth
 }
 
-function Install-Embed() {
-    $url = "$ftp/$Version/python-$Version-embed-$Arch.zip"
+function Install-Zip($url) {
     Write-Info "Install $url"
     $zipfile = Download-Temporary $url
     Expand-Archive $zipfile -DestinationPath $OutDir
+    Remove-Item -Recurse (Split-Path $zipfile -Parent)
 }
 
 function Install-Python-Msi() {
     New-Item -Path $OutDir -ItemType directory
-    Install-Msi "$ftp/$Version/$Arch/core.msi" $OutDir
-    Install-Msi "$ftp/$Version/$Arch/exe.msi" $OutDir
-    Install-Msi "$ftp/$Version/$Arch/lib.msi" $OutDir
+    Install-Msi "$ftp/$Version/$Arch/core.msi"
+    Install-Msi "$ftp/$Version/$Arch/exe.msi"
+    Install-Msi "$ftp/$Version/$Arch/lib.msi"
     Install-Pth
     if ($Tcltk) {
-        Install-Msi "$ftp/$Version/$Arch/tcltk.msi" $OutDir
+        Install-Msi "$ftp/$Version/$Arch/tcltk.msi"
     }
     if ($Pip) {
         Install-Pip
@@ -98,12 +99,12 @@ function Install-Python-Msi() {
 }
 
 function Install-Python-Embed() {
-    Install-Embed
+    Install-Zip "$ftp/$Version/python-$Version-embed-$Arch.zip"
     New-Item -Path $OutDir\DLLs -ItemType directory
     New-Item -Path $OutDir\Lib -ItemType directory
     Install-Pth
     if ($Tcltk) {
-        Install-Msi "$ftp/$Version/$Arch/tcltk.msi" $OutDir
+        Install-Msi "$ftp/$Version/$Arch/tcltk.msi"
     }
     if ($Pip) {
         Install-Pip
