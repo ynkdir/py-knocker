@@ -22,7 +22,7 @@ function Write-Info($msg) {
 function New-TemporaryFolder() {
     $tmpfile = New-TemporaryFile
     Remove-Item $tmpfile
-    return New-Item -Path $tmpfile.FullName -ItemType directory
+    return New-Item -Path $tmpfile -ItemType directory
 }
 
 function Get-AbsolutePath($path) {
