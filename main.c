@@ -21,22 +21,18 @@ wchar_t *wcsndup(const wchar_t *src, size_t size) {
     return dst;
 }
 
-// only for .exe file
 wchar_t *path_stem(wchar_t *path) {
-    wchar_t *sep = NULL;
-    wchar_t *ext = NULL;
+    wchar_t *start = wcsrchr(path, L'\\');
+    if (start)
+        start++;
+    else
+        start = path;
 
-    for (wchar_t *p = path; *p; ++p) {
-        if (*p == L'/' || *p == L'\\')
-            sep = p;
-        else if (*p == L'.')
-            ext = p;
-    }
+    wchar_t *end = wcschr(start, L'.');
+    if (!end)
+        end = start + wcslen(start);
 
-    if (sep == NULL || ext == NULL || ext < sep)
-        return NULL;
-
-    return wcsndup(sep + 1, ext - sep - 1);
+    return wcsndup(start, end - start);
 }
 
 int wmain(int argc, wchar_t **argv) {
@@ -77,7 +73,7 @@ int wmain(int argc, wchar_t **argv) {
     myargv[1] = L"-I";  // isolated mode
     myargv[2] = L"-m";
     myargv[3] = module;
-    memmove(myargv + 4, argv + 1, (argc - 1) * sizeof(wchar_t *));
+    memmove(myargv + 4, argv + 1, argc * sizeof(wchar_t *));
     return Py_Main(argc + 3, myargv);
 }
 
