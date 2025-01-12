@@ -9,19 +9,14 @@ myapp/
 
 USAGE:
     # Build exe file.
-    > cl /Femain_stub.exe main.c
-    > py -m zipapp bootstrap
-    > cmd /c "copy /b main_stub.exe + bootstrap.pyz myapp.exe"
+    > cl /Femyapp.exe main.c
 
     # Download python embeddable package.
     > py download_python.py --outdir=python --pip --tcltk --embed
 
     # Write main program.
     > vim python\Lib\myapp.py
-    def main():
-        print("hello, myapp")
-    if __name__ == "__main__":
-        main()
+    print("hello, myapp")
 
     # Run myapp.exe.  It runs same name module.
     > .\myapp.exe
