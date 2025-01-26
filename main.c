@@ -40,7 +40,7 @@ int wmain(int argc, wchar_t **argv) {
     if (SetDllDirectoryW(L"") == 0)
         return EXIT_FAILURE;
 
-    wchar_t path[MAX_PATH] = PYTHON_DLL_PATH;
+    wchar_t path[MAX_PATH];
     if (GetModuleFileNameW(NULL, path, MAX_PATH) == 0)
         return EXIT_FAILURE;
 
