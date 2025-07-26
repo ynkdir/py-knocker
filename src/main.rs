@@ -1,7 +1,10 @@
 use std::env;
 use std::iter;
-use windows::core::{self, HSTRING, PCSTR, w};
-use windows::Win32::System::LibraryLoader::{LoadLibraryExW, GetProcAddress, SetDllDirectoryW, LOAD_LIBRARY_SEARCH_DEFAULT_DIRS, LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR};
+use windows::Win32::System::LibraryLoader::{
+    GetProcAddress, LOAD_LIBRARY_SEARCH_DEFAULT_DIRS, LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR,
+    LoadLibraryExW, SetDllDirectoryW,
+};
+use windows::core::{HSTRING, PCSTR, w};
 
 type PyMain = extern "C" fn(i32, *const *const u16) -> i32;
 
@@ -11,12 +14,24 @@ fn encode_utf16(s: &str) -> *const u16 {
 
 fn make_cargs(args: &Vec<String>) -> (i32, *const *const u16) {
     let argc = args.len() as i32;
-    let argv = Box::into_raw(args.iter().map(|x| encode_utf16(&x)).chain(iter::once(std::ptr::null())).collect()) as *const *const u16;
+    let argv = Box::into_raw(
+        args.iter()
+            .map(|x| encode_utf16(&x))
+            .chain(iter::once(std::ptr::null()))
+            .collect(),
+    ) as *const *const u16;
     (argc, argv)
 }
 
 fn get_module_name() -> String {
-    String::from(env::current_exe().unwrap().file_stem().unwrap().to_str().unwrap())
+    String::from(
+        env::current_exe()
+            .unwrap()
+            .file_stem()
+            .unwrap()
+            .to_str()
+            .unwrap(),
+    )
 }
 
 fn get_pydll_path() -> String {
@@ -34,14 +49,19 @@ fn as_cstr(s: &str) -> String {
     format!("{}\0", s)
 }
 
-fn set_dll_directory_secure() -> core::Result<()> {
+fn set_dll_directory_secure() -> windows::core::Result<()> {
     unsafe { SetDllDirectoryW(w!("")) }
 }
 
-fn delay_load<T>(library: &str, function: &str) -> core::Result<T> {
+fn delay_load<T>(library: &str, function: &str) -> windows::core::Result<T> {
     unsafe {
-        let handle = LoadLibraryExW(&HSTRING::from(library), None, LOAD_LIBRARY_SEARCH_DEFAULT_DIRS | LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR)?;
-        let address = GetProcAddress(handle, PCSTR(as_cstr(function).as_ptr())).ok_or_else(|| core::Error::from_win32())?;
+        let handle = LoadLibraryExW(
+            &HSTRING::from(library),
+            None,
+            LOAD_LIBRARY_SEARCH_DEFAULT_DIRS | LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR,
+        )?;
+        let address = GetProcAddress(handle, PCSTR(as_cstr(function).as_ptr()))
+            .ok_or_else(|| windows::core::Error::from_win32())?;
         Ok(std::mem::transmute_copy(&address))
     }
 }
