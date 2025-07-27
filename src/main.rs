@@ -1,4 +1,4 @@
-use anyhow::{Context, Result};
+use anyhow::{Context, Result, bail};
 use std::env;
 use std::iter;
 use windows::Win32::Foundation::HMODULE;
@@ -33,6 +33,14 @@ fn get_module_name() -> Result<String> {
 }
 
 fn get_pydll_path() -> Result<String> {
+    if is_venv() {
+        get_venv_pydll_path()
+    } else {
+        get_local_pydll_path()
+    }
+}
+
+fn get_local_pydll_path() -> Result<String> {
     Ok(env::current_exe()?
         .parent()
         .context("Cannot get parent")?
@@ -40,6 +48,47 @@ fn get_pydll_path() -> Result<String> {
         .to_str()
         .context("Cannot get str")?
         .to_string())
+}
+
+fn get_venv_pydll_path() -> Result<String> {
+    let venv_cfg = get_venv_cfg_path()?;
+    let exe = read_venv_cfg_executable(&venv_cfg)?;
+    Ok(std::path::Path::new(&exe)
+        .with_file_name("python3.dll")
+        .to_str()
+        .context("Cannot get str")?
+        .to_string())
+}
+
+fn read_venv_cfg_executable(venv_cfg_path: &str) -> Result<String> {
+    for line in std::fs::read_to_string(&venv_cfg_path)?.lines() {
+        if line.starts_with("executable = ") {
+            return Ok(String::from(
+                line.strip_prefix("executable = ").context("never happen")?,
+            ));
+        }
+    }
+    bail!("Cannot find 'executable' in pyvenv.cfg");
+}
+
+fn get_venv_cfg_path() -> Result<String> {
+    Ok(env::current_exe()?
+        .parent()
+        .context("Cannot get parent")?
+        .parent()
+        .context("Cannot get parent")?
+        .join("pyvenv.cfg")
+        .to_str()
+        .context("Cannot get str")?
+        .to_string())
+}
+
+fn is_venv() -> bool {
+    let venv_cfg = match get_venv_cfg_path() {
+        Ok(venv_cfg) => venv_cfg,
+        Err(_) => return false,
+    };
+    std::path::Path::new(&venv_cfg).exists()
 }
 
 fn as_cstr(s: &str) -> String {

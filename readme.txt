@@ -1,5 +1,5 @@
-
 Launcher for python application deployment.  Make toplevel directory clean.
+This program directly calls python3.dll insted of forking python.exe.
 
 myapp/
   myapp.exe             # launcher
@@ -9,7 +9,8 @@ myapp/
 
 USAGE:
     # Build exe file.
-    > cl /Femyapp.exe main.c
+    > cargo build
+    > copy target\debug\main.exe myapp.exe
 
     # Download python embeddable package.
     > py download_python.py --outdir=python --pip --tcltk --embed
@@ -23,7 +24,13 @@ USAGE:
     hello, myapp
 
 
-MEMO:
-    # Make exe with distlib.
-    > py make_exe_with_distlib.py --entry="myapp = myapp:main"
+Usage with venv:
+
+    > py -m venv venv
+    > vim venv\Lib\site-packages\myapp.py
+    print("hello, myapp")
+    > cargo build
+    > copy target\debug\main.exe venv\Scripts\myapp.exe
+    > .\venv\Scripts\myapp.exe
+    hello, myapp
 
