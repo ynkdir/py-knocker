@@ -1,13 +1,12 @@
 use anyhow::{Context, Result};
 use std::env;
 use std::iter;
+use windows::Win32::Foundation::HMODULE;
 use windows::Win32::System::LibraryLoader::{
     GetProcAddress, LOAD_LIBRARY_SEARCH_DEFAULT_DIRS, LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR,
     LoadLibraryExW, SetDllDirectoryW,
 };
 use windows::core::{HSTRING, PCSTR, w};
-
-type PyMain = extern "C" fn(i32, *const *const u16) -> i32;
 
 fn encode_utf16(s: &str) -> *const u16 {
     Box::into_raw(s.encode_utf16().chain(iter::once(0)).collect()) as *const u16
@@ -51,17 +50,22 @@ fn set_dll_directory_secure() -> Result<()> {
     unsafe { SetDllDirectoryW(w!("")).context("Cannot set dll directory to ''") }
 }
 
-fn delay_load<T>(library: &str, function: &str) -> Result<T> {
+fn load_library(library: &str) -> Result<HMODULE> {
     unsafe {
-        let handle = LoadLibraryExW(
+        LoadLibraryExW(
             &HSTRING::from(library),
             None,
             LOAD_LIBRARY_SEARCH_DEFAULT_DIRS | LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR,
         )
-        .with_context(|| format!("Cannot load library '{}'", library))?;
+        .with_context(|| format!("Cannot load library '{}'", library))
+    }
+}
+
+fn get_function<T>(handle: HMODULE, function: &str) -> Result<T> {
+    unsafe {
         let address = GetProcAddress(handle, PCSTR(as_cstr(function).as_ptr()))
             .ok_or_else(|| windows::core::Error::from_win32())
-            .with_context(|| format!("Cannot get procedure '{}'", function))?;
+            .with_context(|| format!("Cannot get function '{}'", function))?;
         Ok(std::mem::transmute_copy(&address))
     }
 }
@@ -70,7 +74,8 @@ fn main() -> Result<()> {
     set_dll_directory_secure()?;
 
     let pydll_path = get_pydll_path()?;
-    let py_main = delay_load::<PyMain>(&pydll_path, "Py_Main")?;
+    let pydll = load_library(&pydll_path)?;
+    let py_main = get_function::<extern "C" fn(i32, *const *const u16) -> i32>(pydll, "Py_Main")?;
 
     let mut args: Vec<String> = env::args().collect();
 
