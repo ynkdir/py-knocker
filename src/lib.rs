@@ -1,4 +1,4 @@
-use anyhow::{Context, Result, bail};
+use anyhow::{Context, Result};
 use std::env;
 use std::iter;
 use windows::Win32::Foundation::HMODULE;
@@ -53,14 +53,13 @@ pub fn get_venv_pydll_path() -> Result<String> {
 }
 
 fn read_venv_cfg_home(venv_cfg_path: &str) -> Result<String> {
-    for line in std::fs::read_to_string(&venv_cfg_path)?.lines() {
-        if line.starts_with("home = ") {
-            return Ok(String::from(
-                line.strip_prefix("home = ").context("never happen")?,
-            ));
-        }
-    }
-    bail!("Cannot find 'home' in pyvenv.cfg");
+    Ok(std::fs::read_to_string(venv_cfg_path)?
+        .lines()
+        .find(|line| line.starts_with("home = "))
+        .context("Cannot find 'home' in pyvenv.cfg")?
+        .strip_prefix("home = ")
+        .context("never happen")?
+        .to_string())
 }
 
 fn get_venv_cfg_path() -> Result<String> {
