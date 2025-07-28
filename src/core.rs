@@ -32,15 +32,7 @@ fn get_module_name() -> Result<String> {
         .to_string())
 }
 
-fn get_pydll_path() -> Result<String> {
-    if is_venv() {
-        get_venv_pydll_path()
-    } else {
-        get_local_pydll_path()
-    }
-}
-
-fn get_local_pydll_path() -> Result<String> {
+pub fn get_local_pydll_path() -> Result<String> {
     Ok(env::current_exe()?
         .parent()
         .context("Cannot get parent")?
@@ -50,25 +42,25 @@ fn get_local_pydll_path() -> Result<String> {
         .to_string())
 }
 
-fn get_venv_pydll_path() -> Result<String> {
+pub fn get_venv_pydll_path() -> Result<String> {
     let venv_cfg = get_venv_cfg_path()?;
-    let exe = read_venv_cfg_executable(&venv_cfg)?;
-    Ok(std::path::Path::new(&exe)
-        .with_file_name("python3.dll")
+    let home = read_venv_cfg_home(&venv_cfg)?;
+    Ok(std::path::Path::new(&home)
+        .join("python3.dll")
         .to_str()
         .context("Cannot get str")?
         .to_string())
 }
 
-fn read_venv_cfg_executable(venv_cfg_path: &str) -> Result<String> {
+fn read_venv_cfg_home(venv_cfg_path: &str) -> Result<String> {
     for line in std::fs::read_to_string(&venv_cfg_path)?.lines() {
-        if line.starts_with("executable = ") {
+        if line.starts_with("home = ") {
             return Ok(String::from(
-                line.strip_prefix("executable = ").context("never happen")?,
+                line.strip_prefix("home = ").context("never happen")?,
             ));
         }
     }
-    bail!("Cannot find 'executable' in pyvenv.cfg");
+    bail!("Cannot find 'home' in pyvenv.cfg");
 }
 
 fn get_venv_cfg_path() -> Result<String> {
@@ -81,14 +73,6 @@ fn get_venv_cfg_path() -> Result<String> {
         .to_str()
         .context("Cannot get str")?
         .to_string())
-}
-
-fn is_venv() -> bool {
-    let venv_cfg = match get_venv_cfg_path() {
-        Ok(venv_cfg) => venv_cfg,
-        Err(_) => return false,
-    };
-    std::path::Path::new(&venv_cfg).exists()
 }
 
 fn as_cstr(s: &str) -> String {
@@ -119,11 +103,10 @@ fn get_function<T>(handle: HMODULE, function: &str) -> Result<T> {
     }
 }
 
-fn main() -> Result<()> {
+pub fn launch(pydll_path: &str) -> Result<()> {
     set_dll_directory_secure()?;
 
-    let pydll_path = get_pydll_path()?;
-    let pydll = load_library(&pydll_path)?;
+    let pydll = load_library(pydll_path)?;
     let py_main = get_function::<extern "C" fn(i32, *const *const u16) -> i32>(pydll, "Py_Main")?;
 
     let mut args: Vec<String> = env::args().collect();
