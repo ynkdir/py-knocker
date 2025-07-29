@@ -12,7 +12,7 @@ fn encode_utf16(s: &str) -> *const u16 {
     Box::into_raw(s.encode_utf16().chain(iter::once(0)).collect()) as *const u16
 }
 
-fn make_cargs(args: &Vec<String>) -> (i32, *const *const u16) {
+fn make_cargs(args: &[String]) -> (i32, *const *const u16) {
     let argc = args.len() as i32;
     let argv = Box::into_raw(
         args.iter()
