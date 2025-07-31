@@ -55,10 +55,8 @@ pub fn get_venv_pydll_path() -> Result<String> {
 fn read_venv_cfg_home(venv_cfg_path: &str) -> Result<String> {
     Ok(std::fs::read_to_string(venv_cfg_path)?
         .lines()
-        .find(|line| line.starts_with("home = "))
+        .find_map(|line| line.strip_prefix("home = "))
         .context("Cannot find 'home' in pyvenv.cfg")?
-        .strip_prefix("home = ")
-        .context("never happen")?
         .to_string())
 }
 
