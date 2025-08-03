@@ -6,7 +6,7 @@ use windows::Win32::System::LibraryLoader::{
     GetProcAddress, LOAD_LIBRARY_SEARCH_DEFAULT_DIRS, LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR,
     LoadLibraryExW, SetDllDirectoryW,
 };
-use windows::core::{HSTRING, PCSTR, w};
+use windows::core::{HSTRING, PCSTR, s, w};
 
 fn encode_utf16(s: &str) -> *const u16 {
     Box::into_raw(s.encode_utf16().chain(iter::once(0)).collect()) as *const u16
@@ -72,10 +72,6 @@ fn get_venv_cfg_path() -> Result<String> {
         .to_string())
 }
 
-fn as_cstr(s: &str) -> String {
-    format!("{}\0", s)
-}
-
 fn set_dll_directory_secure() -> Result<()> {
     unsafe { SetDllDirectoryW(w!("")).context("Cannot set dll directory to ''") }
 }
@@ -91,11 +87,11 @@ fn load_library(library: &str) -> Result<HMODULE> {
     }
 }
 
-fn get_function<T>(handle: HMODULE, function: &str) -> Result<T> {
+fn get_function<T>(handle: HMODULE, function: PCSTR) -> Result<T> {
     unsafe {
-        let address = GetProcAddress(handle, PCSTR(as_cstr(function).as_ptr()))
+        let address = GetProcAddress(handle, function)
             .ok_or_else(|| windows::core::Error::from_win32())
-            .with_context(|| format!("Cannot get function '{}'", function))?;
+            .with_context(|| format!("Cannot get function '{}'", function.display()))?;
         Ok(std::mem::transmute_copy(&address))
     }
 }
@@ -104,7 +100,8 @@ pub fn launch(pydll_path: &str) -> Result<()> {
     set_dll_directory_secure()?;
 
     let pydll = load_library(pydll_path)?;
-    let py_main = get_function::<extern "C" fn(i32, *const *const u16) -> i32>(pydll, "Py_Main")?;
+    let py_main =
+        get_function::<extern "C" fn(i32, *const *const u16) -> i32>(pydll, s!("Py_Main"))?;
 
     let mut args: Vec<String> = env::args().collect();
 
