@@ -106,10 +106,9 @@ pub fn launch(pydll_path: &str) -> Result<()> {
     let mut args: Vec<String> = env::args().collect();
 
     if !args.iter().any(|x| x == "--multiprocessing-fork") {
-        let module_name = get_module_name()?;
         args.insert(1, String::from("-I"));
         args.insert(2, String::from("-m"));
-        args.insert(3, module_name);
+        args.insert(3, get_module_name()?);
     }
 
     let (argc, argv) = make_cargs(&args);
