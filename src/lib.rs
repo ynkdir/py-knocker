@@ -16,7 +16,7 @@ fn make_cargs(args: &[String]) -> (i32, *const *const u16) {
     let argc = args.len() as i32;
     let argv = Box::into_raw(
         args.iter()
-            .map(|x| encode_utf16(&x))
+            .map(|x| encode_utf16(x))
             .chain(iter::once(std::ptr::null()))
             .collect(),
     ) as *const *const u16;
@@ -83,14 +83,14 @@ fn load_library(library: &str) -> Result<HMODULE> {
             None,
             LOAD_LIBRARY_SEARCH_DEFAULT_DIRS | LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR,
         )
-        .with_context(|| format!("Cannot load library '{}'", library))
+        .with_context(|| format!("Cannot load library '{library}'"))
     }
 }
 
 fn get_function<T>(handle: HMODULE, function: PCSTR) -> Result<T> {
     unsafe {
         let address = GetProcAddress(handle, function)
-            .ok_or_else(|| windows::core::Error::from_win32())
+            .ok_or_else(windows::core::Error::from_win32)
             .with_context(|| format!("Cannot get function '{}'", function.display()))?;
         Ok(std::mem::transmute_copy(&address))
     }
